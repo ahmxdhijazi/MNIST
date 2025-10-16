@@ -1,8 +1,9 @@
 import os
 from PIL import Image
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
-
+from sklearn.model_selection import train_test_split
 
 class CustomMNISTDataset(Dataset):
     def __init__(self, root_dir, transform=None):
@@ -53,8 +54,49 @@ class CustomMNISTDataset(Dataset):
         return img, label
 
 
-if __name__ == '__main__':
+#data pipeline to load dataset numpy only classifiers
+def load_data_numpy(root_dir, test_split = .2, random_state = 42): #Test split be 20 percent of the data with a state/seed of 42 (always the same split data)
+    imgs = []
+    labels = []
+    print("Loading data for models requiring numpy...")
+    # Implement the nested loop to go through each digit folder and each image.
+    for label in sorted(os.listdir(root_dir)):
+        folder_path = os.path.join(root_dir, label) #Build the path to the digit folder
 
+        if not os.path.isdir(folder_path): #Ensure a folder
+            continue
+
+        #Continue into the digit folder to access individual .png
+        for image_file in os.listdir(folder_path):
+            if image_file.endswith('.png'):
+                #Open the image with PIL and convert it to a NumPy array.
+                full_image_path = os.path.join(folder_path, image_file)
+                # Now, we open the correct path
+                image = Image.open(full_image_path).convert('L')
+                #conver to numpy array
+                image_array = np.array(image)
+
+                #normalize then flatten image array and append to imgs
+                normalized_array = image_array / 255.0
+                flattened_array = normalized_array.flatten()
+                imgs.append(flattened_array)
+                labels.append(int(label))
+
+
+    print("Converting lists to NumPy arrays...")
+    X = np.array(imgs)
+    y = np.array(labels)
+
+    print("Splitting data into training and testing sets...")
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_split, random_state=random_state, stratify=y
+    )
+
+    print("Data loading complete.")
+    return X_train, y_train, X_test, y_test
+
+
+if __name__ == '__main__':
     # Normalize pixel values to [0, 1]
     # transforms.ToTensor() handles this automatically!
     transform_0_to_1 = transforms.Compose([
@@ -90,3 +132,12 @@ if __name__ == '__main__':
     print(f"Min pixel value: {first_image.min()}")
     print(f"Max pixel value: {first_image.max()}")
     print(f"Label of first image: {labels_batch[0]}")
+
+    #NUMPY LOADER TEST: significantly slower than using pytorch
+    print("\n--- Testing NumPy Data Loader ---")
+    X_train, y_train, X_test, y_test = load_data_numpy('data/MNIST_Data')
+    print(f"X_train shape: {X_train.shape}")
+    print(f"y_train shape: {y_train.shape}")
+    print(f"X_test shape: {X_test.shape}")
+    print(f"y_test shape: {y_test.shape}")
+    print(f"Pixel value range: {X_train.min()} to {X_train.max()}")
