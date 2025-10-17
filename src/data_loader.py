@@ -54,7 +54,7 @@ class CustomMNISTDataset(Dataset):
         return img, label
 
 
-#data pipeline to load dataset numpy only classifiers
+#data pipeline to load dataset for numpy only classifiers
 def load_data_numpy(root_dir, test_split = .2, random_state = 42): #Test split be 20 percent of the data with a state/seed of 42 (always the same split data)
     imgs = []
     labels = []
