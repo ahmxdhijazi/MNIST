@@ -12,7 +12,7 @@ class CustomMNISTDataset(Dataset):
         self.transform = transform
         self.samples = []  #Fill this with (image_path, label) tuples
 
-        print("Finding all image paths...")
+        print("Finding all image paths.")
         self.root_dir = root_dir
         self.transform = transform
         self.samples = []  # fill this list
@@ -58,7 +58,7 @@ class CustomMNISTDataset(Dataset):
 def load_data_numpy(root_dir, test_split = .2, random_state = 42): #Test split be 20 percent of the data with a state/seed of 42 (always the same split data)
     imgs = []
     labels = []
-    print("Loading data for models requiring numpy...")
+    print("Loading data for models requiring numpy.")
     # Implement the nested loop to go through each digit folder and each image.
     for label in sorted(os.listdir(root_dir)):
         folder_path = os.path.join(root_dir, label) #Build the path to the digit folder
@@ -83,11 +83,11 @@ def load_data_numpy(root_dir, test_split = .2, random_state = 42): #Test split b
                 labels.append(int(label))
 
 
-    print("Converting lists to NumPy arrays...")
+    print("Converting lists to NumPy arrays.")
     X = np.array(imgs)
     y = np.array(labels)
 
-    print("Splitting data into training and testing sets...")
+    print("Splitting data into training and testing sets.")
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_split, random_state=random_state, stratify=y
     )
