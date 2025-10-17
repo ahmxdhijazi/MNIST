@@ -1,0 +1,14 @@
+KNN Classifier notes:
+    k = 3 notes:
+        Time To Complete: 12 minutes 18 seconds
+        Accuracy: 97.04%
+        Personal Notes:
+    k = 5 notes:
+        Time To Complete: 12 minutes 0 seconds
+        Accuracy: 96.92%
+    k = 1 notes:
+        Time To Complete: 11 minutes 51 seconds
+        Accuracy: 96.95%
+
+NEXT:
+Naive Bias notes:
