@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 from sklearn.model_selection import train_test_split
 
 class CustomMNISTDataset(Dataset):
+    # <--- Heavy GEMINI assistance to import data with pytorch --->
     def __init__(self, root_dir, transform=None):
 
         self.root_dir = root_dir
@@ -52,6 +53,7 @@ class CustomMNISTDataset(Dataset):
         if self.transform:
             img = self.transform(img)
         return img, label
+    # <--- END GEMINI CODE --->
 
 
 #data pipeline to load dataset for numpy only classifiers
@@ -93,6 +95,7 @@ def load_data_numpy(root_dir, test_split = .2, random_state = 42): #Test split b
     )
 
     print("Data loading complete.")
+    print("<------------------------------->\n\n")
     return X_train, y_train, X_test, y_test
 
 
