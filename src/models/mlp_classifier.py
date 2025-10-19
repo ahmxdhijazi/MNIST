@@ -40,8 +40,8 @@ class MLPClassifier(nn.Module):
 
         return out
 
-
-#Temporary Testing block with random temp data so we don't explode later.
+"""
+Temporary Testing block with random temp data so we don't explode later.
 if __name__ == '__main__':
     model = MLPClassifier()
     print("Model Architecture:")
@@ -52,3 +52,4 @@ if __name__ == '__main__':
 
     print(f"\nShape of input: {temp_input.shape}")
     print(f"Shape of output: {output.shape}")
+"""

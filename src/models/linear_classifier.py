@@ -28,7 +28,8 @@ class LinearClassifier(nn.Module):
 
         return out
 
-#Test functionality with temporary data!
+"""
+Test functionality with temporary data!
 if __name__ == '__main__':
     # Create an instance of the model
     model = LinearClassifier()
@@ -42,3 +43,4 @@ if __name__ == '__main__':
 
     print(f"Shape of input: {temp_input.shape}")
     print(f"Shape of output: {output.shape}")
+"""
