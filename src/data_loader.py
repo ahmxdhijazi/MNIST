@@ -4,9 +4,10 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from sklearn.model_selection import train_test_split
+from torch.utils.data.sampler import SubsetRandomSampler
 
 class CustomMNISTDataset(Dataset):
-    # <--- Heavy GEMINI assistance to import data with pytorch --->
+    # <--- GEMINI to import data with pytorch --->
     def __init__(self, root_dir, transform=None):
 
         self.root_dir = root_dir
@@ -99,6 +100,51 @@ def load_data_numpy(root_dir, test_split = .2, random_state = 42): #Test split b
     return X_train, y_train, X_test, y_test
 
 
+def get_pytorch_dataloaders(root_dir, batch_size=64, test_split=0.2, random_state=42):
+    #Creates and returns PyTorch DataLoader objects for training and testing.
+    #Helper | reusable package for Linear Classifier, CNN, and MLP (So we Don't Repeat Ourselves | DRY)
+
+    print("Creating PyTorch DataLoaders.")
+
+    #Define the transformations , using the [-1, 1] normalization
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.5,), std=(0.5,))
+    ])
+
+    #Create the full dataset, instance of the dataset class
+    full_dataset = CustomMNISTDataset(root_dir=root_dir, transform=transform)
+
+    #Initialize indices for splitting
+    #Creating the 80/20 split for training and testing
+    dataset_size = len(full_dataset)
+    indices = list(range(dataset_size))
+    split = int(np.floor(test_split * dataset_size))
+
+    #Shuffle indices
+    np.random.seed(random_state)
+    np.random.shuffle(indices)
+
+    train_indices, test_indices = indices[split:], indices[:split]
+
+    #Data Samplers
+    train_sampler = SubsetRandomSampler(train_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
+
+    #Create the DataLoaders
+    train_loader = DataLoader(dataset=full_dataset,
+                              batch_size=batch_size,
+                              sampler=train_sampler)
+
+    test_loader = DataLoader(dataset=full_dataset,
+                             batch_size=batch_size,
+                             sampler=test_sampler)
+
+    print(f"DataLoaders created: {len(train_indices)} train, {len(test_indices)} test.")
+    #return our train/test_loaders
+    return train_loader, test_loader
+
+
 if __name__ == '__main__':
     # Normalize pixel values to [0, 1]
     # transforms.ToTensor() handles this automatically!
@@ -144,3 +190,14 @@ if __name__ == '__main__':
     print(f"X_test shape: {X_test.shape}")
     print(f"y_test shape: {y_test.shape}")
     print(f"Pixel value range: {X_train.min()} to {X_train.max()}")
+
+    #<-------------------------------------------->
+    # Test PyTorch loader
+    print("\n--- Testing PyTorch Data Loader Function ---")
+    train_loader, test_loader = get_pytorch_dataloaders(root_dir='../data/MNIST')
+
+    # Get one batch from the train_loader
+    images, labels = next(iter(train_loader))
+    print(f"Batch shape from train_loader: {images.shape}")
+    print(f"Labels shape from train_loader: {labels.shape}")
+    print(f"Pixel range: {images.min()} to {images.max()}")
