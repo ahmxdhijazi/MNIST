@@ -28,7 +28,7 @@ class LinearClassifier(nn.Module):
 
         return out
 
-#Test functionality
+#Test functionality with temporary data!
 if __name__ == '__main__':
     # Create an instance of the model
     model = LinearClassifier()

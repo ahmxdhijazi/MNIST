@@ -64,6 +64,9 @@ def main():
         predictions = model.predict(X_test)
         end_time = time.time()
 
+    elif args.model == 'lc':
+        pass
+
 
     #requirements for both
     duration = end_time - start_time
