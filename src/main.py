@@ -10,16 +10,17 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from models.mlp_classifier import MLPClassifier
+from models.cnn import CNNClassifier
 
 def main():
-    # <--- GEMINI ASSISTANCE --->
+    # <--- GEMINI CODE --->
     #Set up the argument parser to choose the model
     parser = argparse.ArgumentParser(description="Run MNIST classifiers.")
     parser.add_argument('--model',
                         type=str,
-                        choices=['knn', 'nb', 'lc', 'mlp'],
+                        choices=['knn', 'nb', 'lc', 'mlp', 'cnn'],
                         required=True,
-                        help="Model to run: 'knn' for K-Nearest Neighbor, 'nb' for Naive Bayes, 'lc' for Linear Classifier, mlp for MLP Classifier")
+                        help="Model to run: 'knn' for K-Nearest Neighbor, 'nb' for Naive Bayes, 'lc' for Linear Classifier, mlp for MLP Classifier, cnn for CNN")
     args = parser.parse_args()
 
     # --- Set device (important for PyTorch) ---
@@ -31,7 +32,7 @@ def main():
     else:
         device = torch.device("cpu")
     print(f"Using device: {device}")
-    #<--- GEMINI ASSISTANCE END --->
+    #<--- GEMINI CODE END --->
 
     #If KNN is chosen to run in CLI argument
     if args.model == 'knn':
@@ -67,7 +68,7 @@ def main():
         accuracy = np.sum(predictions == y_test) / len(y_test)
 
 
-    #If Naive Bayes is chosen in CLI argument
+    #If NAIVE BAYES is chosen
     elif args.model == 'nb':
         # Load the data
         X_train, y_train, X_test, y_test = load_data_numpy('data/MNIST_Data')
@@ -178,8 +179,10 @@ def main():
         end_time = time.time()
         accuracy = correct / total
 
+    #IF MULTI-LAYER PERCEPTRON IS CHOSEN
     elif args.model == 'mlp':
         print("Running Multilayer Perceptron Classifier.")
+        #Aquire data
         train_loader, test_loader = get_pytorch_dataloaders(root_dir='data/MNIST_Data', batch_size=64)
 
         #Get number of epochs from user same way I did for lc
@@ -202,8 +205,9 @@ def main():
 
         optimizer = optim.SGD(model.parameters(), lr=0.01)
 
+
         print(f"Training for {num_epochs} epochs.")
-        start_time = time.time()
+        start_time = time.time() #Begin time
 
         # Training loop
         model.train()
@@ -224,18 +228,89 @@ def main():
                 loss.backward() #calculate new
                 optimizer.step() #update model weights
 
+            #print the average loss for the whole epoch
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
         # Evaluation
-        model.eval()
+        model.eval() #Entering eval mode turn off special behaviors only used during training
         correct = 0
         total = 0
-        with torch.no_grad(): # no gradients needed
-            for images, labels in test_loader:
+        with torch.no_grad(): #saves a massive amount of memory and computation, making evaluation much faster
+            for images, labels in test_loader: #loop through all batches
+                #Move batch data to correct device (CPU/GPU)
+                images = images.to(device)
+                labels = labels.to(device)
+                outputs = model(images) #forward pass
+                _, predicted = torch.max(outputs.data, 1) #find index of highest score
+
+                #update counter and total
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        #End Testing time and calculate accuracy
+        end_time = time.time()
+        accuracy = correct / total
+
+    #IF CNN IS CHOSEN
+    elif args.model == 'cnn':
+        print("Running Convolutional Neural Network (PyTorch).")
+        #Aquire the data
+        train_loader, test_loader = get_pytorch_dataloaders(root_dir='data/MNIST_Data', batch_size=64)
+
+        # Get number of epochs from user
+        while True:
+            try:
+                epoch_input = input("Enter the number of epochs to train for (e.g., 5, 10): ")
+                num_epochs = int(epoch_input)
+                if num_epochs > 0:
+                    break
+                else:
+                    print("Please enter a positive integer.")
+            except ValueError:
+                print("Invalid input. Please enter an integer.")
+
+        #Use the CNN model
+        model = CNNClassifier().to(device)
+
+        #Using Cross Entropy Loss
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(model.parameters(), lr=0.01)
+
+        #Begin training time
+        print(f"Training for {num_epochs} epochs.")
+        start_time = time.time()
+
+        #Identical to MLP
+        model.train()
+        for epoch in range(num_epochs):
+            for i, (images, labels) in enumerate(train_loader):
                 images = images.to(device)
                 labels = labels.to(device)
                 outputs = model(images)
-                _, predicted = torch.max(outputs.data, 1)
+                loss = criterion(outputs, labels)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+            #print the average loss for each epoch
+            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+        print("Training finished.")
+        print("Evaluating model.")
+
+        model.eval() #Entering eval mode turn off special behaviors only used during training
+        #Counters for total and correct predictions made
+        correct = 0
+        total = 0
+        with torch.no_grad(): #saves a massive amount of memory and computation, making evaluation much faster
+            for images, labels in test_loader: #loop through all batches
+                #Move batch data to correct device (CPU/GPU)
+                images = images.to(device)
+                labels = labels.to(device)
+                outputs = model(images) #forward pass
+                _, predicted = torch.max(outputs.data, 1) #find index of highest score
+
+                #update counter and total
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
@@ -243,32 +318,29 @@ def main():
         accuracy = correct / total
 
 
-    #Common steps for every model to calculate time and output results
+    #calculate time and output for every model for fun
     duration = end_time - start_time
     minutes = int(duration // 60)
     seconds = int(duration % 60)
 
     #Output accuracy and train/testing time for corresponding methods
+    print("--------------------")
     if args.model == 'knn':
-        print("--------------------")
         print(f"KNN Classifier Accuracy (k={model.k}): {accuracy * 100:.2f}%")
         print(f"Prediction took {minutes} minutes and {seconds} seconds.")
     elif args.model == 'nb':
-        print("--------------------")
         print(f"Naive Bayes Classifier Accuracy (alpha={model.alpha}): {accuracy * 100:.2f}%")
         print(f"Prediction took {minutes} minutes and {seconds} seconds.")
     elif args.model == 'lc':
-        print("--------------------")
         print(f"Linear Classifier Accuracy: {accuracy * 100:.2f}%")
         print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
     elif args.model == 'mlp':
-        print("--------------------")
         print(f"MLP Classifier Accuracy: {accuracy * 100:.2f}%")
         print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
     elif args.model == 'cnn':
-        pass
+        print(f"CNN Accuracy: {accuracy * 100:.2f}%")
+        print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
     print("--------------------")
-
 
 
 if __name__ == '__main__':
