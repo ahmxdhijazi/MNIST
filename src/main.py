@@ -9,6 +9,7 @@ from models.linear_classifier import LinearClassifier
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from models.mlp_classifier import MLPClassifier
 
 def main():
     # <--- GEMINI ASSISTANCE --->
@@ -16,9 +17,9 @@ def main():
     parser = argparse.ArgumentParser(description="Run MNIST classifiers.")
     parser.add_argument('--model',
                         type=str,
-                        choices=['knn', 'nb', 'lc'],
+                        choices=['knn', 'nb', 'lc', 'mlp'],
                         required=True,
-                        help="Model to run: 'knn' for K-Nearest Neighbor, 'nb' for Naive Bayes, 'lc' for Linear Classifier")
+                        help="Model to run: 'knn' for K-Nearest Neighbor, 'nb' for Naive Bayes, 'lc' for Linear Classifier, mlp for MLP Classifier")
     args = parser.parse_args()
 
     # --- Set device (important for PyTorch) ---
@@ -50,16 +51,16 @@ def main():
                 print("Invalid input. Please enter an integer.")
 
         # Create an instance of the classifier
-        knn = KNNClassifier(k=k_value)
+        model = KNNClassifier(k=k_value)
 
         #Train the model
-        knn.train(X_train, y_train)
+        model.train(X_train, y_train)
 
         #Begin Timer on prediction since KNN instantly trains, we can just time the prediciton
         print("Starting prediction timer.")
         start_time = time.time()  #Record start time
         #Make our predictions
-        predictions = knn.predict(X_test)
+        predictions = model.predict(X_test)
         end_time = time.time()  #Record end time
 
         # (Number of Correct Predictions) / (Total Number of Predictions) to evaluate accuracy
@@ -177,6 +178,70 @@ def main():
         end_time = time.time()
         accuracy = correct / total
 
+    elif args.model == 'mlp':
+        print("Running Multilayer Perceptron Classifier.")
+        train_loader, test_loader = get_pytorch_dataloaders(root_dir='data/MNIST_Data', batch_size=64)
+
+        #Get number of epochs from user same way I did for lc
+        while True:
+            try:
+                epoch_input = input("Enter the number of epochs to train for (e.g., 5, 10): ")
+                num_epochs = int(epoch_input)
+                if num_epochs > 0:
+                    break
+                else:
+                    print("Please enter a positive integer.")
+            except ValueError:
+                print("Invalid input. Please enter an integer.")
+
+        # Reuse most of the lc code, however we need to se the MLP model instead obviously
+        model = MLPClassifier().to(device)
+
+        #another change is to use the cross entropy loss
+        criterion = nn.CrossEntropyLoss()
+
+        optimizer = optim.SGD(model.parameters(), lr=0.01)
+
+        print(f"Training for {num_epochs} epochs.")
+        start_time = time.time()
+
+        # Training loop
+        model.train()
+        for epoch in range(num_epochs):
+            for i, (images, labels) in enumerate(train_loader):
+                #move data to the device
+                images = images.to(device)
+                labels = labels.to(device)
+
+                # Forward pass
+                outputs = model(images)
+
+                # no more one-hot encoding compared to lc, and pass labels directly
+                loss = criterion(outputs, labels)
+
+                # Backward pass
+                optimizer.zero_grad() #clear old
+                loss.backward() #calculate new
+                optimizer.step() #update model weights
+
+            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+        # Evaluation
+        model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad(): # no gradients needed
+            for images, labels in test_loader:
+                images = images.to(device)
+                labels = labels.to(device)
+                outputs = model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        end_time = time.time()
+        accuracy = correct / total
+
 
     #Common steps for every model to calculate time and output results
     duration = end_time - start_time
@@ -196,7 +261,12 @@ def main():
         print("--------------------")
         print(f"Linear Classifier Accuracy: {accuracy * 100:.2f}%")
         print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
-
+    elif args.model == 'mlp':
+        print("--------------------")
+        print(f"MLP Classifier Accuracy: {accuracy * 100:.2f}%")
+        print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
+    elif args.model == 'cnn':
+        pass
     print("--------------------")
 
 
