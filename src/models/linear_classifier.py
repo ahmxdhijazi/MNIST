@@ -34,7 +34,6 @@ if __name__ == '__main__':
     model = LinearClassifier()
     print(f"Model Architecture: {model}\n")
 
-
     #creating a temporary batch of data (64 images, 1 channel, 28x28) for testing.
     temp_input = torch.randn(64, 1, 28, 28)
 
