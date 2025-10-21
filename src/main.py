@@ -11,6 +11,45 @@ import torch.nn as nn
 import torch.optim as optim
 from models.mlp_classifier import MLPClassifier
 from models.cnn import CNNClassifier
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+def plot_lin_weights(model):
+    #Visualizes the learned weights of the LinearClassifier's single layer.
+    weights = model.linear_layer.weight.data.to('cpu')
+    fig, axes = plt.subplots(2, 5, figsize=(12, 6))
+    for i in range(10):
+        weight_image = weights[i].reshape(28, 28)
+        ax = axes[i // 5, i % 5]
+        ax.imshow(weight_image, cmap='RdBu')
+        ax.set_title(f"Weight Template for: {i}")
+        ax.axis('off')
+    plt.suptitle("Linear Classifier Learned Weights (W)")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_confusion_matrix(true_labels, predicted_labels, model_name):
+#Generates and displays a confusion matrix for model's predictions.
+
+    # Use scikit-learn to compute the confusion matrix
+    cm = confusion_matrix(true_labels, predicted_labels)
+
+    # Create new figure
+    plt.figure(figsize=(10, 8))
+
+    #Using seaborn's heatmap for visuals
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=range(10), yticklabels=range(10))
+
+    #Add labels and a title
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title(f'Confusion Matrix for {model_name.upper()}')
+
+    # Display the plot in a pop-up window
+    plt.show()
 
 def main():
     # <--- GEMINI CODE --->
@@ -64,9 +103,12 @@ def main():
         predictions = model.predict(X_test)
         end_time = time.time()  #Record end time
 
+        #Used to output confusion matrix/failure analysis
+        true_labels = y_test
+        predicted_labels = predictions
+
         # (Number of Correct Predictions) / (Total Number of Predictions) to evaluate accuracy
         accuracy = np.sum(predictions == y_test) / len(y_test)
-
 
     #If NAIVE BAYES is chosen
     elif args.model == 'nb':
@@ -97,6 +139,10 @@ def main():
         start_time = time.time()
         predictions = model.predict(X_test)
         end_time = time.time()
+
+        #variable for confusion matrix
+        true_labels = y_test
+        predicted_labels = predictions
 
         # (Number of Correct Predictions) / (Total Number of Predictions) to evaluate accuracy
         accuracy = np.sum(predictions == y_test) / len(y_test)
@@ -154,7 +200,6 @@ def main():
                 optimizer.step()
 
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
-
         print("Training finished.")
 
         #Evaluation/Accuracy check
@@ -162,6 +207,10 @@ def main():
         model.eval()  # Set the model to evaluation mode
         correct = 0
         total = 0
+
+        # Create empty lists to store all labels and predictions
+        true_labels = []
+        predicted_labels = []
         with torch.no_grad():  #no gradients needed
             for images, labels in test_loader:
                 images = images.to(device)
@@ -175,6 +224,9 @@ def main():
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
+
+                true_labels.extend(labels.cpu().numpy())
+                predicted_labels.extend(predicted.cpu().numpy())
 
         end_time = time.time()
         accuracy = correct / total
@@ -235,6 +287,10 @@ def main():
         model.eval() #Entering eval mode turn off special behaviors only used during training
         correct = 0
         total = 0
+
+        true_labels = []
+        predicted_labels = []
+
         with torch.no_grad(): #saves a massive amount of memory and computation, making evaluation much faster
             for images, labels in test_loader: #loop through all batches
                 #Move batch data to correct device (CPU/GPU)
@@ -246,6 +302,9 @@ def main():
                 #update counter and total
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
+
+                true_labels.extend(labels.cpu().numpy())
+                predicted_labels.extend(predicted.cpu().numpy())
 
         #End Testing time and calculate accuracy
         end_time = time.time()
@@ -302,6 +361,9 @@ def main():
         #Counters for total and correct predictions made
         correct = 0
         total = 0
+        true_labels = []
+        predicted_labels = []
+
         with torch.no_grad(): #saves a massive amount of memory and computation, making evaluation much faster
             for images, labels in test_loader: #loop through all batches
                 #Move batch data to correct device (CPU/GPU)
@@ -313,6 +375,9 @@ def main():
                 #update counter and total
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
+
+                true_labels.extend(labels.cpu().numpy())
+                predicted_labels.extend(predicted.cpu().numpy())
 
         end_time = time.time()
         accuracy = correct / total
@@ -331,9 +396,13 @@ def main():
     elif args.model == 'nb':
         print(f"Naive Bayes Classifier Accuracy (alpha={model.alpha}): {accuracy * 100:.2f}%")
         print(f"Prediction took {minutes} minutes and {seconds} seconds.")
+        # Plotting within the method cause the accuracy and times to output with a delay while the plot loaded,
+        # This will allow the output to complete before the plot arrives.
+        model.plot_prob_maps()
     elif args.model == 'lc':
         print(f"Linear Classifier Accuracy: {accuracy * 100:.2f}%")
         print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
+        plot_lin_weights(model)
     elif args.model == 'mlp':
         print(f"MLP Classifier Accuracy: {accuracy * 100:.2f}%")
         print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
@@ -341,6 +410,12 @@ def main():
         print(f"CNN Accuracy: {accuracy * 100:.2f}%")
         print(f"Training & Evaluation took {minutes} minutes and {seconds} seconds.")
     print("--------------------")
+    # Automatically generate confusion matrix after results are printed
+    if args.model in ['knn', 'nb', 'lc', 'mlp', 'cnn']:
+        print("Displaying confusion matrix...")
+        plot_confusion_matrix(true_labels, predicted_labels, args.model)
+
+
 
 
 if __name__ == '__main__':

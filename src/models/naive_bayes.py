@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class NaiveBayesClassifier:
@@ -70,3 +71,23 @@ class NaiveBayesClassifier:
             predictions.append(prediction)
 
         return np.array(predictions)
+
+    def plot_prob_maps(self):
+        # Create grid of subplots
+        fig, axes = plt.subplots(2, 5, figsize=(12, 6))
+
+        for index, c in enumerate(self.classes):
+            # Determine which subplot to draw on
+            ax = axes[index // 5, index % 5]
+            # Reshape the 784-element pro-vector back into a 28x28 image
+            prob_map = self.likelihoods[index, :].reshape(28, 28)
+            #display image with grayscale color map
+            ax.imshow(prob_map, cmap='gray')
+            ax.set_title(f"Probability Map for: {c}")
+            ax.axis('off')  # Hide the x/y axes for a cleaner look, looks cluttered with it
+
+        plt.suptitle("Naive Bayes Learned Probability Maps")
+        plt.tight_layout()  # Adjusts spacing
+        #plt.savefig("naive_bayes_maps.png")  #would save the plot to a file
+        plt.show()
+
