@@ -96,7 +96,7 @@ def load_data_numpy(root_dir, test_split = .2, random_state = 42): #Test split b
     )
 
     print("Data loading complete.")
-    print("<------------------------------->\n\n")
+    print("<------------------------------->\n")
     return X_train, y_train, X_test, y_test
 
 
