@@ -1,11 +1,6 @@
-# Data folder
+# Ignore the entire data directory
 /data/
 
-# Python cache
+# Ignore Python cache files
 __pycache__/
 *.pyc
-
-# IDE and OS specific files
-.idea/
-.vscode/
-.DS_Store
