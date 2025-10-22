@@ -16,14 +16,14 @@ class LinearClassifier(nn.Module):
         super(LinearClassifier, self).__init__()
         self.linear_layer = nn.Linear(in_features=784, out_features=10) #Mentioned above, 784 features in, 10 output features
 
-    def forward(self, x): #forward pass, how the input becomes the output, data flowing forward through the model
-        #flatten the input image
-        #   x starts as shape: [batch_size, 1, 28, 28]
-        #   We need to reshape it to: [batch_size, 784]
-        #   get batch size and automatically calculate the remaining dimension using -1 (which will be 784).
+    def forward(self, x): #Forward pass, how the input becomes the output, data flowing forward through the model
+        #Flatten the input image
+        #x starts as shape: [batch_size, 1, 28, 28]
+        #We need to reshape it to: [batch_size, 784]
+        #Get batch size and automatically calculate the remaining dimension using -1 (which will be 784).
         x = x.view(x.size(0), -1)
 
-        #pass flattened data through the linear layer
+        #Pass flattened data through the linear layer
         out = self.linear_layer(x)
 
         return out

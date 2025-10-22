@@ -18,10 +18,15 @@ import seaborn as sns
 def plot_lin_weights(model):
     #Visualizes the learned weights of the LinearClassifier's single layer.
     weights = model.linear_layer.weight.data.to('cpu')
+    #Create a figure and a grid of subplots (2 rows, 5 columns)
     fig, axes = plt.subplots(2, 5, figsize=(12, 6))
+    #Loop through each of the 10 digits (0 to 9)
     for i in range(10):
+        #Reshape the weight vector for the current digit into a 28x28 image
         weight_image = weights[i].reshape(28, 28)
+        #Select the correct subplot axes based on the current digit index
         ax = axes[i // 5, i % 5]
+        #Display the weight image using a Red-Blue colormap (negative=red, positive=blue)
         ax.imshow(weight_image, cmap='RdBu')
         ax.set_title(f"Weight Template for: {i}")
         ax.axis('off')
@@ -33,10 +38,10 @@ def plot_lin_weights(model):
 def plot_confusion_matrix(true_labels, predicted_labels, model_name):
 #Generates and displays a confusion matrix for model's predictions.
 
-    # Use scikit-learn to compute the confusion matrix
+    #Use scikit-learn to compute the confusion matrix
     cm = confusion_matrix(true_labels, predicted_labels)
 
-    # Create new figure
+    #Create new figure
     plt.figure(figsize=(10, 8))
 
     #Using seaborn's heatmap for visuals
@@ -48,7 +53,7 @@ def plot_confusion_matrix(true_labels, predicted_labels, model_name):
     plt.ylabel('True Label')
     plt.title(f'Confusion Matrix for {model_name.upper()}')
 
-    # Display the plot in a pop-up window
+    #Display the plot in a pop-up window
     plt.show()
 
 def main():
@@ -75,7 +80,7 @@ def main():
 
     #If KNN is chosen to run in CLI argument
     if args.model == 'knn':
-        # Load the data
+        #Load the data
         X_train, y_train, X_test, y_test = load_data_numpy('data/MNIST_Data')
 
         #Just for reproducibility for different k values without altering my code.
@@ -84,13 +89,13 @@ def main():
                 k_input = input("Enter the value for k (e.g., 1, 3, 5): ")
                 k_value = int(k_input)
                 if k_value > 0:
-                    break  # Exit the loop if input is a valid positive integer
+                    break  #Exit the loop if input is a valid positive integer
                 else:
                     print("Please enter a positive integer.")
             except ValueError:
                 print("Invalid input. Please enter an integer.")
 
-        # Create an instance of the classifier
+        #Create an instance of the classifier
         model = KNNClassifier(k=k_value)
 
         #Train the model
@@ -107,12 +112,12 @@ def main():
         true_labels = y_test
         predicted_labels = predictions
 
-        # (Number of Correct Predictions) / (Total Number of Predictions) to evaluate accuracy
+        #(Number of Correct Predictions) / (Total Number of Predictions) to evaluate accuracy
         accuracy = np.sum(predictions == y_test) / len(y_test)
 
     #If NAIVE BAYES is chosen
     elif args.model == 'nb':
-        # Load the data
+        #Load the data
         X_train, y_train, X_test, y_test = load_data_numpy('data/MNIST_Data')
 
         print("Running Naive Bayes Classifier.")
@@ -123,7 +128,7 @@ def main():
         X_train = (X_train > 0.5).astype(int) #True = 1 as int, False = 0 as int
         X_test = (X_test > 0.5).astype(int)
 
-        #instance of classifier
+        #Instance of classifier
         model = NaiveBayesClassifier(alpha=1)  # Using alpha=1 for smoothing
 
         #Train for training
@@ -144,7 +149,7 @@ def main():
         true_labels = y_test
         predicted_labels = predictions
 
-        # (Number of Correct Predictions) / (Total Number of Predictions) to evaluate accuracy
+        #(Number of Correct Predictions) / (Total Number of Predictions) to evaluate accuracy
         accuracy = np.sum(predictions == y_test) / len(y_test)
 
     #Linear Classifier (PYTORCH)
@@ -166,7 +171,7 @@ def main():
                 epoch_input = input("Enter the number of epochs to train for (e.g., 5, 10): ")
                 num_epochs = int(epoch_input)
                 if num_epochs > 0:
-                    break  # Exit the loop if input is a valid positive integer
+                    break  #Exit the loop if input is a valid positive integer
                 else:
                     print("Please enter a positive integer.")
             except ValueError:
@@ -249,10 +254,10 @@ def main():
             except ValueError:
                 print("Invalid input. Please enter an integer.")
 
-        # Reuse most of the lc code, however we need to se the MLP model instead obviously
+        #Reuse most of the lc code, however we need to se the MLP model instead obviously
         model = MLPClassifier().to(device)
 
-        #another change is to use the cross entropy loss
+        #Another change is to use the cross entropy loss
         criterion = nn.CrossEntropyLoss()
 
         optimizer = optim.SGD(model.parameters(), lr=0.01)
@@ -265,7 +270,7 @@ def main():
         model.train()
         for epoch in range(num_epochs):
             for i, (images, labels) in enumerate(train_loader):
-                #move data to the device
+                #Move data to the device
                 images = images.to(device)
                 labels = labels.to(device)
 
@@ -275,15 +280,15 @@ def main():
                 # no more one-hot encoding compared to lc, and pass labels directly
                 loss = criterion(outputs, labels)
 
-                # Backward pass
-                optimizer.zero_grad() #clear old
-                loss.backward() #calculate new
-                optimizer.step() #update model weights
+                #Backward pass
+                optimizer.zero_grad() #Clear old
+                loss.backward() #Calculate new
+                optimizer.step() #Update model weights
 
-            #print the average loss for the whole epoch
+            #Print the average loss for the whole epoch
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
-        # Evaluation
+        #Evaluation
         model.eval() #Entering eval mode turn off special behaviors only used during training
         correct = 0
         total = 0
@@ -291,15 +296,15 @@ def main():
         true_labels = []
         predicted_labels = []
 
-        with torch.no_grad(): #saves a massive amount of memory and computation, making evaluation much faster
-            for images, labels in test_loader: #loop through all batches
+        with torch.no_grad(): #Saves a massive amount of memory and computation, making evaluation much faster
+            for images, labels in test_loader: #Loop through all batches
                 #Move batch data to correct device (CPU/GPU)
                 images = images.to(device)
                 labels = labels.to(device)
-                outputs = model(images) #forward pass
-                _, predicted = torch.max(outputs.data, 1) #find index of highest score
+                outputs = model(images) #Forward pass
+                _, predicted = torch.max(outputs.data, 1) #Find index of highest score
 
-                #update counter and total
+                #Update counter and total
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
@@ -316,7 +321,7 @@ def main():
         #Aquire the data
         train_loader, test_loader = get_pytorch_dataloaders(root_dir='data/MNIST_Data', batch_size=64)
 
-        # Get number of epochs from user
+        #Get number of epochs from user
         while True:
             try:
                 epoch_input = input("Enter the number of epochs to train for (e.g., 5, 10): ")
@@ -351,7 +356,7 @@ def main():
                 loss.backward()
                 optimizer.step()
 
-            #print the average loss for each epoch
+            #Print the average loss for each epoch
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
         print("Training finished.")
@@ -364,15 +369,15 @@ def main():
         true_labels = []
         predicted_labels = []
 
-        with torch.no_grad(): #saves a massive amount of memory and computation, making evaluation much faster
-            for images, labels in test_loader: #loop through all batches
+        with torch.no_grad(): #Saves a massive amount of memory and computation, making evaluation much faster
+            for images, labels in test_loader: #Loop through all batches
                 #Move batch data to correct device (CPU/GPU)
                 images = images.to(device)
                 labels = labels.to(device)
-                outputs = model(images) #forward pass
-                _, predicted = torch.max(outputs.data, 1) #find index of highest score
+                outputs = model(images) #Forward pass
+                _, predicted = torch.max(outputs.data, 1) #Find index of highest score
 
-                #update counter and total
+                #Update counter and total
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
@@ -383,7 +388,7 @@ def main():
         accuracy = correct / total
 
 
-    #calculate time and output for every model for fun
+    #Calculate time and output for every model for fun
     duration = end_time - start_time
     minutes = int(duration // 60)
     seconds = int(duration % 60)
@@ -414,8 +419,6 @@ def main():
     if args.model in ['knn', 'nb', 'lc', 'mlp', 'cnn']:
         print("Displaying confusion matrix...")
         plot_confusion_matrix(true_labels, predicted_labels, args.model)
-
-
 
 
 if __name__ == '__main__':
