@@ -2,7 +2,7 @@ import numpy as np
 from collections import Counter
 
 class KNNClassifier:
-    # compare with k = 3 is not told otherwise, good practice incase I mess up...
+    #Compare with k = 3 is not told otherwise, good practice incase I mess up...
     def __init__(self, k=3):
         self.k = k
         print(f"Initialized KNN Classifier with k={self.k}")
